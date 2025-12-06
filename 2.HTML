@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>成绩雷达图分析器 - 高中九科成绩可视化工具 | ScoreRadar.cn</title>
+    <meta name="description" content="免费在线成绩分析工具，生成多边形雷达图，支持语数英物化生政史地九科成绩可视化，提供及格线、优秀线参考，150分/100分转换">
+    <meta name="keywords" content="成绩分析,雷达图,高考成绩,成绩可视化,考试分析,学习工具,高中成绩,学科分析">
+    <meta name="author" content="成绩雷达图">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    
+    <!-- 微软必应收录优化 -->
+    <meta name="msvalidate.01" content="YOUR_BING_VERIFICATION_CODE">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <style>
+        /* ========== 全局重置 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* ========== 基础布局 ========== */
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .main-wrapper {
+            width: 100%;
+            max-width: 1400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* ========== 头部区域 ========== */
+        .header {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            line-height: 1.5;
+        }
+        
+        /* ========== 主内容区 ========== */
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            width: 100%;
+            justify-content: center;
+        }
+        
+        /* ========== 控制面板 ========== */
+        .control-panel {
+            flex: 1;
+            min-width: min(100%, 500px);
+            background: white;
+            padding: clamp(15px, 3vw, 25px);
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        
+        /* ========== 图表面板 ========== */
+        .chart-panel {
+            flex: 1.5;
+            min-width: min(100%, 600px);
+            background: white;
+            padding: clamp(15px, 3vw, 25px);
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* ========== 科目选择器 ========== */
+        .subject-selector {
+            margin: 15px 0;
+            padding: clamp(15px, 3vw, 20px);
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px dashed #ddd;
+        }
+        
+        .subject-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .subject-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .subject-checkbox:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+        }
+        
+        .subject-checkbox.selected {
+            background: #e8f4fd;
+            border-color: #3498db;
+        }
+        
+        /* ========== 科目输入行（关键修复） ========== */
+        .subject-inputs-container {
+            width: 100%;
+            overflow: visible;
+        }
+        
+        .subject-row {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            transition: all 0.3s;
+            width: 100%;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        /* 电脑屏幕布局 */
+        @media (min-width: 992px) {
+            .subject-row {
+                flex-wrap: nowrap;
+            }
+        }
+        
+        .subject-name {
+            flex: 0 0 min(120px, 100%);
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: clamp(14px, 2vw, 16px);
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .score-input {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex-wrap: wrap;
+        }
+        
+        @media (min-width: 576px) {
+            .score-input {
+                flex-wrap: nowrap;
+            }
+        }
+        
+        .score-input input[type="number"] {
+            width: 85px;
+            min-width: 85px;
+            padding: 8px 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: clamp(14px, 2vw, 16px);
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .score-input input[type="number"]:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+        
+        .score-slider {
+            flex: 1;
+            min-width: 100px;
+            -webkit-appearance: none;
+            height: 6px;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        .score-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #3498db;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .score-slider::-webkit-slider-thumb:hover {
+            background: #2980b9;
+            transform: scale(1.2);
+        }
+        
+        .score-input select {
+            padding: 6px 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: clamp(12px, 1.8vw, 14px);
+            min-width: 80px;
+        }
+        
+        .max-score {
+            flex: 0 0 65px;
+            text-align: right;
+            color: #7f8c8d;
+            font-size: clamp(12px, 1.8vw, 14px);
+            white-space: nowrap;
+        }
+        
+        .percentage {
+            flex: 0 0 50px;
+            text-align: center;
+            font-weight: bold;
+            color: #2ecc71;
+            font-size: clamp(12px, 1.8vw, 14px);
+            white-space: nowrap;
+        }
+        
+        /* ========== 按钮区域 ========== */
+        .buttons {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: clamp(14px, 2vw, 16px);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        #generateBtn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        #resetBtn {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+        
+        #applySubjects {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* ========== 图表样式控制 ========== */
+        .style-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .style-control label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: clamp(13px, 1.8vw, 15px);
+        }
+        
+        .style-control input, .style-control select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: clamp(13px, 1.8vw, 15px);
+        }
+        
+        /* ========== 统计数据 ========== */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+            width: 100%;
+        }
+        
+        .stat-item {
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .stat-value {
+            font-size: clamp(24px, 5vw, 32px);
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            margin-top: 5px;
+            font-size: clamp(12px, 2vw, 14px);
+        }
+        
+        /* ========== 雷达图容器 ========== */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: min(70vh, 600px);
+            min-height: 350px;
+            margin: 10px 0;
+        }
+        
+        #radarCanvas {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+            width: 100%;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: clamp(12px, 1.8vw, 14px);
+        }
+        
+        /* ========== 转换器面板 ========== */
+        .converter-panel {
+            background: white;
+            padding: clamp(15px, 3vw, 25px);
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            margin-top: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .converter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .converter-box {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .converter-input {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .converter-input input {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: clamp(14px, 2vw, 16px);
+        }
+        
+        .converter-result {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            font-size: clamp(16px, 2.5vw, 18px);
+            text-align: center;
+            border: 2px dashed #2ecc71;
+        }
+        
+        .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: clamp(20px, 3vw, 24px);
+        }
+        
+        /* ========== 分享和底部 ========== */
+        .share-section {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: clamp(12px, 1.8vw, 14px);
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        /* ========== 特殊设备适配 ========== */
+        /* 竖屏手机 */
+        @media (max-width: 576px) and (orientation: portrait) {
+            body {
+                padding: 10px;
+            }
+            
+            .subject-row {
+                padding: 10px;
+            }
+            
+            .subject-name {
+                flex: 0 0 100%;
+                text-align: center;
+                margin-bottom: 8px;
+            }
+            
+            .score-input {
+                flex: 0 0 100%;
+                justify-content: center;
+            }
+            
+            .max-score, .percentage {
+                flex: 0 0 auto;
+                margin-top: 8px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .chart-container {
+                height: min(60vh, 400px);
+                min-height: 300px;
+            }
+        }
+        
+        /* 横屏手机 */
+        @media (max-width: 896px) and (orientation: landscape) {
+            .main-content {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-panel, .chart-panel {
+                width: 100%;
+                max-width: 800px;
+            }
+            
+            .chart-container {
+                height: min(50vh, 450px);
+            }
+            
+            .subject-row {
+                flex-wrap: nowrap;
+            }
+        }
+        
+        /* 平板设备 */
+        @media (min-width: 577px) and (max-width: 991px) {
+            .main-content {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-panel, .chart-panel {
+                width: 100%;
+                max-width: 800px;
+            }
+        }
+        
+        /* 电脑竖屏 */
+        @media (min-width: 992px) and (max-height: 700px) {
+            .chart-container {
+                height: min(60vh, 500px);
+            }
+            
+            .header {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+        }
+        
+        /* 超宽屏幕 */
+        @media (min-width: 1600px) {
+            .main-wrapper {
+                max-width: 1600px;
+            }
+            
+            .control-panel {
+                max-width: 550px;
+            }
+            
+            .chart-panel {
+                max-width: 800px;
+            }
+            
+            .chart-container {
+                height: 650px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>📊 成绩雷达图分析器</h1>
+            <p>自由组合3-9科成绩，生成可视化雷达图，支持及格线/优秀线参考和分数转换</p>
+        </div>
+        
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- 控制面板 -->
+            <div class="control-panel">
+                <h2>🎯 科目选择与成绩输入</h2>
+                
+                <!-- 科目选择器 -->
+                <div class="subject-selector">
+                    <h3>选择要显示的科目（至少3科）：</h3>
+                    <div class="subject-checkboxes" id="subjectCheckboxes"></div>
+                    <button id="applySubjects" style="margin-top: 15px; width: 100%;">✅ 应用科目选择</button>
+                </div>
+                
+                <!-- 科目输入区 -->
+                <div class="subject-inputs-container">
+                    <div id="subjectInputs"></div>
+                </div>
+                
+                <!-- 图表样式控制 -->
+                <div class="style-controls">
+                    <div class="style-control">
+                        <label>填充透明度：</label>
+                        <input type="range" id="fillAlpha" min="0" max="100" value="20">
+                        <span id="alphaValue">20%</span>
+                    </div>
+                    <div class="style-control">
+                        <label>线条样式：</label>
+                        <select id="lineStyle">
+                            <option value="solid">实线</option>
+                            <option value="dashed">虚线</option>
+                            <option value="dotted">点线</option>
+                        </select>
+                    </div>
+                    <div class="style-control">
+                        <label>线条粗细：</label>
+                        <input type="range" id="lineWidth" min="1" max="10" value="3">
+                        <span id="widthValue">3px</span>
+                    </div>
+                    <div class="style-control">
+                        <label>显示等级线：</label>
+                        <select id="showGradeLines">
+                            <option value="true">显示</option>
+                            <option value="false">隐藏</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 按钮 -->
+                <div class="buttons">
+                    <button id="generateBtn">📈 生成/更新雷达图</button>
+                    <button id="resetBtn">🔄 重置成绩</button>
+                </div>
+                
+                <!-- 统计数据 -->
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalScore">0</div>
+                        <div class="stat-label">总分</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="averageScore">0</div>
+                        <div class="stat-label">平均分</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="percentage">0%</div>
+                        <div class="stat-label">达成率</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 图表面板 -->
+            <div class="chart-panel">
+                <h2>📈 成绩雷达图</h2>
+                <div class="chart-container">
+                    <canvas id="radarCanvas"></canvas>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <div style="width: 15px; height: 15px; background: #3498db; border-radius: 3px;"></div>
+                        <span>你的成绩</span>
+                    </div>
+                    <div class="legend-item">
+                        <div style="width: 15px; height: 15px; border: 2px dashed #e74c3c;"></div>
+                        <span>满分参考</span>
+                    </div>
+                    <div class="legend-item">
+                        <div style="width: 15px; height: 15px; border: 1px dashed #2ecc71;"></div>
+                        <span>优秀线(90%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div style="width: 15px; height: 15px; border: 1px dashed #f39c12;"></div>
+                        <span>及格线(60%)</span>
+                    </div>
+                </div>
+                <p style="color: #7f8c8d; margin-top: 15px; font-size: clamp(13px, 2vw, 15px); text-align: center;">
+                    多边形形状越饱满，各科发展越均衡
+                </p>
+            </div>
+        </div>
+        
+        <!-- 转换器面板 -->
+        <div class="converter-panel">
+            <h2>🔄 分数转换器</h2>
+            <div class="converter-grid">
+                <div class="converter-box">
+                    <h3>150分制 → 100分制</h3>
+                    <div class="converter-input">
+                        <input type="number" id="score150" placeholder="输入150分制成绩" min="0" max="150">
+                        <button onclick="convert150to100()">转换</button>
+                    </div>
+                    <div class="converter-result">
+                        100分制成绩：<span class="highlight" id="result100">0</span>分
+                    </div>
+                </div>
+                
+                <div class="converter-box">
+                    <h3>100分制 → 150分制</h3>
+                    <div class="converter-input">
+                        <input type="number" id="score100" placeholder="输入100分制成绩" min="0" max="100">
+                        <button onclick="convert100to150()">转换</button>
+                    </div>
+                    <div class="converter-result">
+                        150分制成绩：<span class="highlight" id="result150">0</span>分
+                    </div>
+                </div>
+                
+                <div class="converter-box">
+                    <h3>百分比计算器</h3>
+                    <div class="converter-input">
+                        <input type="number" id="actualScore" placeholder="实际得分">
+                        <span style="line-height: 40px;">/</span>
+                        <input type="number" id="totalScoreInput" placeholder="总分" value="150">
+                    </div>
+                    <button onclick="calculatePercentage()" style="width: 100%; margin-top: 10px;">计算百分比</button>
+                    <div class="converter-result" style="margin-top: 15px;">
+                        百分比：<span class="highlight" id="resultPercent">0%</span><br>
+                        <small id="resultGrade" style="color: #7f8c8d;"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分享区域 -->
+        <div class="share-section">
+            <h3>📱 分享给同学一起用！</h3>
+            <p>网址：<strong id="siteUrl">https://ScoreRadar.cn</strong></p>
+            <div style="margin: 15px;">
+                <button onclick="copyLink()" style="padding: 10px 20px; margin: 5px; background: #3498db; color: white; border: none; border-radius: 5px;">
+                    复制链接
+                </button>
+                <button onclick="shareWeChat()" style="padding: 10px 20px; margin: 5px; background: #07c160; color: white; border: none; border-radius: 5px;">
+                    微信分享
+                </button>
+            </div>
+            <p style="color: #666; font-size: clamp(12px, 1.8vw, 14px);">保存本页到收藏夹，随时分析成绩！</p>
+        </div>
+        
+        <!-- 页脚 -->
+        <div class="footer">
+            <p>© 2023 成绩雷达图分析器 | 免责声明：本工具仅供学习参考，不存储任何用户数据</p>
+            <p>推荐使用 Chrome/Edge 浏览器获得最佳体验</p>
+        </div>
+    </div>
+
+    <script>
+        // ================== 核心数据 ==================
+        const allSubjects = [
+            { name: "语文", maxScore: 150, type: "主科", color: "#e74c3c", selected: true },
+            { name: "数学", maxScore: 150, type: "主科", color: "#3498db", selected: true },
+            { name: "英语", maxScore: 150, type: "主科", color: "#2ecc71", selected: true },
+            { name: "物理", maxScore: 100, type: "理科", color: "#9b59b6", selected: false },
+            { name: "化学", maxScore: 100, type: "理科", color: "#1abc9c", selected: false },
+            { name: "生物", maxScore: 100, type: "理科", color: "#34495e", selected: false },
+            { name: "政治", maxScore: 100, type: "文科", color: "#f39c12", selected: false },
+            { name: "历史", maxScore: 100, type: "文科", color: "#d35400", selected: false },
+            { name: "地理", maxScore: 100, type: "文科", color: "#16a085", selected: false }
+        ];
+        
+        let subjects = [
+            { ...allSubjects[0], score: 0 },
+            { ...allSubjects[1], score: 0 },
+            { ...allSubjects[2], score: 0 },
+            { ...allSubjects[6], score: 0 },
+            { ...allSubjects[7], score: 0 },
+            { ...allSubjects[8], score: 0 }
+        ];
+        
+        let sides = subjects.length;
+        let chartStyle = {
+            fillAlpha: 20,
+            lineStyle: 'solid',
+            lineWidth: 3,
+            showGradeLines: true
+        };
+        
+        // ================== 科目选择器 ==================
+        function initSubjectSelector() {
+            const container = document.getElementById('subjectCheckboxes');
+            container.innerHTML = '';
+            
+            allSubjects.forEach((subject, index) => {
+                const isSelected = subjects.some(s => s.name === subject.name);
+                const checkbox = document.createElement('div');
+                checkbox.className = `subject-checkbox ${isSelected ? 'selected' : ''}`;
+                checkbox.innerHTML = `
+                    <input type="checkbox" id="sub${index}" ${isSelected ? 'checked' : ''}>
+                    <label for="sub${index}" style="cursor: pointer;">
+                        <strong>${subject.name}</strong>
+                        <small style="color: #7f8c8d;">(${subject.type})</small>
+                    </label>
+                `;
+                container.appendChild(checkbox);
+                
+                checkbox.addEventListener('click', function(e) {
+                    if (e.target.type !== 'checkbox') {
+                        const checkbox = this.querySelector('input');
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    this.classList.toggle('selected', checkbox.checked);
+                });
+            });
+        }
+        
+        function applySubjectSelection() {
+            const selectedSubjects = [];
+            
+            allSubjects.forEach((subject, index) => {
+                const checkbox = document.getElementById(`sub${index}`);
+                if (checkbox && checkbox.checked) {
+                    const existingSubject = subjects.find(s => s.name === subject.name);
+                    selectedSubjects.push({
+                        ...subject,
+                        score: existingSubject ? existingSubject.score : 0
+                    });
+                }
+            });
+            
+            if (selectedSubjects.length < 3) {
+                alert('请至少选择3个科目！');
+                return;
+            }
+            
+            subjects = selectedSubjects;
+            sides = subjects.length;
+            renderSubjectInputs();
+            drawRadar();
+        }
+        
+        // ================== 科目输入行 ==================
+        function renderSubjectInputs() {
+            const container = document.getElementById('subjectInputs');
+            container.innerHTML = '';
+            
+            subjects.forEach((subject, index) => {
+                const div = document.createElement('div');
+                div.className = 'subject-row';
+                div.style.borderLeft = `4px solid ${subject.color}`;
+                
+                div.innerHTML = `
+                    <div class="subject-name">
+                        <span style="font-weight: bold; color: ${subject.color};">${subject.name}</span>
+                        <small style="color: #7f8c8d; margin-left: 5px;">(${subject.type})</small>
+                    </div>
+                    <div class="score-input">
+                        <input type="number" id="scoreInput${index}" 
+                               min="0" max="${subject.maxScore}" 
+                               value="${subject.score}"
+                               oninput="updateScore(${index}, this.value)">
+                        <input type="range" class="score-slider" id="scoreSlider${index}"
+                               min="0" max="${subject.maxScore}" 
+                               value="${subject.score}"
+                               oninput="updateScore(${index}, this.value)">
+                        <select onchange="updateMaxScore(${index}, this.value)" 
+                                style="padding: 5px; border-radius: 5px;">
+                            <option value="100" ${subject.maxScore === 100 ? 'selected' : ''}>满分100</option>
+                            <option value="150" ${subject.maxScore === 150 ? 'selected' : ''}>满分150</option>
+                        </select>
+                    </div>
+                    <div class="percentage" id="percentage${index}">
+                        ${subject.maxScore > 0 ? Math.round(subject.score / subject.maxScore * 100) : 0}%
+                    </div>
+                    <div class="max-score">
+                        满分: ${subject.maxScore}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            
+            updateStats();
+        }
+        
+        function updateScore(index, value) {
+            const subject = subjects[index];
+            const score = Math.min(Math.max(0, parseInt(value) || 0), subject.maxScore);
+            subject.score = score;
+            
+            document.getElementById(`scoreInput${index}`).value = score;
+            document.getElementById(`scoreSlider${index}`).value = score;
+            
+            const percentage = subject.maxScore > 0 ? Math.round(score / subject.maxScore * 100) : 0;
+            document.getElementById(`percentage${index}`).textContent = `${percentage}%`;
+            
+            updateStats();
+        }
+        
+        function updateMaxScore(index, maxScore) {
+            const score = parseInt(maxScore);
+            subjects[index].maxScore = score;
+            
+            const scoreInput = document.getElementById(`scoreInput${index}`);
+            const scoreSlider = document.getElementById(`scoreSlider${index}`);
+            
+            scoreInput.max = score;
+            scoreSlider.max = score;
+            
+            if (subjects[index].score > score) {
+                subjects[index].score = score;
+                scoreInput.value = score;
+                scoreSlider.value = score;
+            }
+            
+            updateStats();
+        }
+        
+        function updateStats() {
+            let total = 0, maxTotal = 0;
+            subjects.forEach(subj => {
+                total += subj.score;
+                maxTotal += subj.maxScore;
+            });
+            
+            const average = subjects.length > 0 ? Math.round(total / subjects.length) : 0;
+            const percentage = maxTotal > 0 ? Math.round(total / maxTotal * 100) : 0;
+            
+            document.getElementById('totalScore').textContent = total;
+            document.getElementById('averageScore').textContent = average;
+            document.getElementById('percentage').textContent = `${percentage}%`;
+        }
+        
+// ================== 高清雷达图绘制 ==================
+function drawRadar() {
+    const canvas = document.getElementById('radarCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = canvas.parentElement;
+    
+    // 高清适配
+    const dpr = window.devicePixelRatio || 1;
+    const rect = container.getBoundingClientRect();
+    
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    
+    ctx.scale(dpr, dpr);
+    
+    // 使用显示尺寸计算
+    const displayWidth = rect.width;
+    const displayHeight = rect.height;
+    const centerX = displayWidth / 2;
+    const centerY = displayHeight / 2;
+    const radius = Math.min(centerX, centerY) * 0.75;
+    
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
+    
+    // ========== 绘制等级环 ==========
+    if (chartStyle.showGradeLines) {
+        const gradeLevels = [
+            { percent: 0.9, label: "优秀", color: "#2ecc71" },
+            { percent: 0.8, label: "良好", color: "#3498db" },
+            { percent: 0.6, label: "及格", color: "#f39c12" }
+        ];
+        
+        gradeLevels.forEach(grade => {
+            const gradeRadius = radius * grade.percent;
+            ctx.beginPath();
+            ctx.strokeStyle = grade.color + "80";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 3]);
+            
+            for (let i = 0; i < sides; i++) {
+                const angle = (Math.PI * 2 * i / sides) - Math.PI / 2;
+                const x = centerX + gradeRadius * Math.cos(angle);
+                const y = centerY + gradeRadius * Math.sin(angle);
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            
+            ctx.closePath();
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+            ctx.fillStyle = grade.color;
+            ctx.font = "bold " + Math.max(10, displayWidth * 0.015) + "px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(grade.label, centerX, centerY - gradeRadius - 15);
+        });
+        
+        ctx.setLineDash([]);
+    }
+    
+    // ========== 绘制网格（5个同心多边形）==========
+    ctx.strokeStyle = '#eee';
+    ctx.lineWidth = 1;
+    
+    for (let level = 1; level <= 5; level++) {
+        const levelRadius = radius * level / 5;
+        ctx.beginPath();
+        
+        for (let i = 0; i < sides; i++) {
+            const angle = (Math.PI * 2 * i / sides) - Math.PI / 2;
+            const x = centerX + levelRadius * Math.cos(angle);
+            const y = centerY + levelRadius * Math.sin(angle);
+            
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        
+        ctx.closePath();
+        ctx.stroke();
+    }
+    
+    // ========== 绘制坐标轴和标签 ==========
+    const levelRadius = radius;
+    ctx.fillStyle = '#7f8c8d';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    for (let i = 0; i < sides; i++) {
+        const angle = (Math.PI * 2 * i / sides) - Math.PI / 2;
+        const labelX = centerX + (levelRadius + 30) * Math.cos(angle);
+        const labelY = centerY + (levelRadius + 30) * Math.sin(angle);
+        
+        // 坐标轴线
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(centerX + levelRadius * Math.cos(angle), centerY + levelRadius * Math.sin(angle));
+        ctx.strokeStyle = '#ddd';
+        ctx.stroke();
+        
+        // 科目标签
+        ctx.fillStyle = subjects[i].color;
+        ctx.font = 'bold ' + Math.max(12, displayWidth * 0.018) + 'px Microsoft YaHei';
+        ctx.fillText(subjects[i].name, labelX, labelY);
+    }
+    
+    // ========== 绘制成绩多边形（关键修复！）==========
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(52, 152, 219, ${chartStyle.fillAlpha / 100})`;
+    ctx.strokeStyle = '#3498db';
+    ctx.lineWidth = chartStyle.lineWidth;
+    
+    // 设置线条样式
+    if (chartStyle.lineStyle === 'dashed') {
+        ctx.setLineDash([10, 5]);
+    } else if (chartStyle.lineStyle === 'dotted') {
+        ctx.setLineDash([2, 5]);
+    }
+    
+    let firstX, firstY;
+    const points = []; // 存储所有点坐标
+    
+    // 第一步：计算所有点的坐标
+    for (let i = 0; i < sides; i++) {
+        const subject = subjects[i];
+        // 修复：0分也有15%半径，避免挤在中心
+        const percentage = subject.maxScore > 0 
+            ? Math.max(0.15, (subject.score || 0) / subject.maxScore)  // 最小15%！
+            : 0.15;
+        const angle = (Math.PI * 2 * i / sides) - Math.PI / 2;
+        const r = radius * percentage;
+        const x = centerX + r * Math.cos(angle);
+        const y = centerY + r * Math.sin(angle);
+        
+        points.push({ x, y, subject, angle, r });
+        
+        if (i === 0) {
+            ctx.moveTo(x, y);
+            firstX = x;
+            firstY = y;
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+    
+    // 第二步：确保闭合多边形
+    if (firstX !== undefined && firstY !== undefined) {
+        ctx.lineTo(firstX, firstY);
+    }
+    
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // 第三步：绘制数据点和分数标签（在所有点都连接后再画）
+    points.forEach(point => {
+        ctx.save();
+        ctx.setLineDash([]);
+        
+        // 数据点（彩色圆点）
+        ctx.beginPath();
+        ctx.fillStyle = point.subject.color;
+        ctx.arc(point.x, point.y, Math.max(4, displayWidth * 0.008), 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 分数标签（红字）
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = 'bold ' + Math.max(10, displayWidth * 0.012) + 'px Arial';
+        const labelAngle = point.angle + Math.PI * 0.02;
+        const labelRadius = point.r + 25;
+        ctx.fillText(`${point.subject.score}/${point.subject.maxScore}`, 
+                   centerX + labelRadius * Math.cos(labelAngle),
+                   centerY + labelRadius * Math.sin(labelAngle));
+        
+        ctx.restore();
+    });
+    
+    // ========== 绘制满分多边形（参考线）==========
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(231, 76, 79, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 3]);
+    
+    for (let i = 0; i < sides; i++) {
+        const angle = (Math.PI * 2 * i / sides) - Math.PI / 2;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    
+    ctx.closePath();
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // ========== 调试信息（可选）==========
+    console.log(`绘制了 ${sides} 边形，各点半径：`, points.map(p => ({
+        科目: p.subject.name,
+        分数: p.subject.score,
+        半径百分比: (p.r / radius * 100).toFixed(1) + '%'
+    })));
+}
+        
+        // ================== 分数转换器 ==================
+        function convert150to100() {
+            const score150 = parseFloat(document.getElementById('score150').value) || 0;
+            const result100 = (score150 / 150 * 100).toFixed(1);
+            document.getElementById('result100').textContent = result100;
+        }
+        
+        function convert100to150() {
+            const score100 = parseFloat(document.getElementById('score100').value) || 0;
+            const result150 = (score100 / 100 * 150).toFixed(1);
+            document.getElementById('result150').textContent = result150;
+        }
+        
+        function calculatePercentage() {
+            const actual = parseFloat(document.getElementById('actualScore').value) || 0;
+            const total = parseFloat(document.getElementById('totalScoreInput').value) || 150;
+            const percent = total > 0 ? (actual / total * 100).toFixed(1) : 0;
+            
+            document.getElementById('resultPercent').textContent = percent + '%';
+            
+            let grade = '';
+            if (percent >= 90) grade = '优秀 👍';
+            else if (percent >= 80) grade = '良好 👍';
+            else if (percent >= 70) grade = '中等 👌';
+            else if (percent >= 60) grade = '及格 👌';
+            else grade = '不及格 💪 加油！';
+            
+            document.getElementById('resultGrade').textContent = grade;
+        }
+        
+        // ================== 分享功能 ==================
+        function copyLink() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                alert('链接已复制到剪贴板！\n' + url);
+            });
+        }
+        
+        function shareWeChat() {
+            alert('请点击微信右上角"..."，选择"发送给朋友"或"分享到朋友圈"');
+        }
+        
+        // ================== 初始化 ==================
+        document.addEventListener('DOMContentLoaded', function() {
+            initSubjectSelector();
+            renderSubjectInputs();
+            
+            // 样式控制事件
+            document.getElementById('fillAlpha').addEventListener('input', function() {
+                chartStyle.fillAlpha = this.value;
+                document.getElementById('alphaValue').textContent = this.value + '%';
+                drawRadar();
+            });
+            
+            document.getElementById('lineStyle').addEventListener('change', function() {
+                chartStyle.lineStyle = this.value;
+                drawRadar();
+            });
+            
+            document.getElementById('lineWidth').addEventListener('input', function() {
+                chartStyle.lineWidth = this.value;
+                document.getElementById('widthValue').textContent = this.value + 'px';
+                drawRadar();
+            });
+            
+            document.getElementById('showGradeLines').addEventListener('change', function() {
+                chartStyle.showGradeLines = this.value === 'true';
+                drawRadar();
+            });
+            
+            // 按钮事件
+            document.getElementById('applySubjects').addEventListener('click', applySubjectSelection);
+            document.getElementById('generateBtn').addEventListener('click', drawRadar);
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                subjects.forEach(subj => subj.score = 0);
+                renderSubjectInputs();
+                drawRadar();
+            });
+            
+            // 窗口大小变化时重绘
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(drawRadar, 100);
+            });
+            
+            // 初始绘制
+            drawRadar();
+            convert150to100();
+            convert100to150();
+            calculatePercentage();
+        });
+    </script>
+</body>
+</html>
